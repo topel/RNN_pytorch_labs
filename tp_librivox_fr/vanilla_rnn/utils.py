@@ -8,25 +8,26 @@ import re
 #############################
 # PTB
 #############################
-def check_ptb_dataset_exists(path_data='../'):
-    flag_idx2word = os.path.isfile(path_data + 'ptb/idx2word.pt') 
-    flag_test_data = os.path.isfile(path_data + 'ptb/test_data.pt') 
-    flag_train_data = os.path.isfile(path_data + 'ptb/train_data.pt') 
-    flag_word2idx = os.path.isfile(path_data + 'ptb/word2idx.pt') 
+def check_dataset_exists(path_data='../'):
+    flag_idx2word = os.path.isfile(path_data + 'librivox_fr/idx2word.pt') 
+    flag_test_data = os.path.isfile(path_data + 'librivox_fr/test_data.pt') 
+    flag_train_data = os.path.isfile(path_data + 'librivox_fr/train_data.pt') 
+    flag_word2idx = os.path.isfile(path_data + 'librivox_fr/word2idx.pt') 
     if flag_idx2word==False or flag_test_data==False or flag_train_data==False or flag_word2idx==False:
-        print('PTB dataset missing - generating...')
-        data_folder = 'ptb/data_raw'
-        corpus = Corpus(path_data+data_folder)
-        batch_size=20
-        train_data = batchify(corpus.train, batch_size)
-        val_data = batchify(corpus.valid, batch_size)
-        test_data = batchify(corpus.test, batch_size)
-        vocab_size = len(corpus.dictionary)
-        torch.save(train_data,path_data + 'ptb/train_data.pt')
-        torch.save(test_data,path_data + 'ptb/test_data.pt')
-        torch.save(corpus.dictionary.idx2word,path_data + 'ptb/idx2word.pt')
-        torch.save(corpus.dictionary.word2idx,path_data + 'ptb/word2idx.pt')
+        print('Librivox_fr dataset manquant')
+#         data_folder = 'librivox_fr/data_raw'
+#         corpus = Corpus(path_data+data_folder)
+#         batch_size=20
+#         train_data = batchify(corpus.train, batch_size)
+#         val_data = batchify(corpus.valid, batch_size)
+#         test_data = batchify(corpus.test, batch_size)
+#         vocab_size = len(corpus.dictionary)
+#         torch.save(train_data,path_data + 'librivox_fr/train_data.pt')
+#         torch.save(test_data,path_data + 'librivox_fr/test_data.pt')
+#         torch.save(corpus.dictionary.idx2word,path_data + 'librivox_fr/idx2word.pt')
+#         torch.save(corpus.dictionary.word2idx,path_data + 'librivox_fr/word2idx.pt')
     return path_data
+
 
 class Dictionary(object):
     def __init__(self):
@@ -41,6 +42,7 @@ class Dictionary(object):
 
     def __len__(self):
         return len(self.idx2word)
+        
         
 class Corpus(object):
     def __init__(self, path):
@@ -73,6 +75,7 @@ class Corpus(object):
 
         return ids
 
+    
 def batchify(data, bsz):
     # Work out how cleanly we can divide the dataset into bsz parts.
     nbatch = data.size(0) // bsz
@@ -84,9 +87,7 @@ def batchify(data, bsz):
 
 
 path_data = '../'
-_ = check_ptb_dataset_exists(path_data)
-# word2idx  =  torch.load(path_data + 'ptb/word2idx.pt')
-# idx2word  =  torch.load(path_data + 'ptb/idx2word.pt')
+_ = check_dataset_exists(path_data)
 
 word2idx  =  torch.load(path_data + 'librivox_fr/word2idx.pt')
 idx2word  =  torch.load(path_data + 'librivox_fr/idx2word.pt')
@@ -106,8 +107,8 @@ def normalize_gradient(net):
    
     if grad_norm<1e-4:
         net.zero_grad()
-        print('grad norm close to zero')
-    else:    
+        print('norme du gradient proche de zéro')
+    else:
         for p in net.parameters():
              p.grad.data.div_(grad_norm)
 
@@ -118,21 +119,9 @@ def display_num_param(net):
     nb_param = 0
     for param in net.parameters():
         nb_param += param.numel()
-    print('There are {} ({:.2f} million) parameters in this neural network'.format(
+    print('Nombre de paramètres du réseau : {} ({:.2f} millions)'.format(
         nb_param, nb_param/1e6)
          )
-
-def sentence2vector(sentence):
-    words = sentence.split()
-    x = torch.LongTensor(len(words),1)
-    for idx, word in enumerate(words):
-
-        if word not in word2idx:
-            print('You entered a word which is not in the vocabulary.')
-            print('Make sure that you do not have any capital letters')
-        else:
-            x[idx,0]=word2idx[word]
-    return x
 
 
 def sentence2vector_librivox_fr(sentence):
@@ -141,9 +130,9 @@ def sentence2vector_librivox_fr(sentence):
     for idx, word in enumerate(words):
         word = re.sub("'", "_", word)
         if word not in word2idx:
-            print('You entered a word which is not in the vocabulary.')
-            print('Make sure that you do not have any capital letters')
-            print("word ---> <unk> with index 0")
+            print('Vous avez entrer un mot hors-vocabulaire.')
+            print('--> Enlever lettres majuscules et ponctuation')
+            print("mot --> <unk> avec index 0")
             x[idx,0]=0            
         else:
             x[idx,0]=word2idx[word]
@@ -160,95 +149,4 @@ def show_next_word(scores):
         percentage= p[i].item()*100
         word=  idx2word[idx.item()]
         print(  "{:.1f}%\t".format(percentage),  word ) 
-
-
-
-        
-def check_mnist_dataset_exists(path_data='../../data/'):
-    flag_train_data = os.path.isfile(path_data + 'mnist/train_data.pt') 
-    flag_train_label = os.path.isfile(path_data + 'mnist/train_label.pt') 
-    flag_test_data = os.path.isfile(path_data + 'mnist/test_data.pt') 
-    flag_test_label = os.path.isfile(path_data + 'mnist/test_label.pt') 
-    if flag_train_data==False or flag_train_label==False or flag_test_data==False or flag_test_label==False:
-        print('MNIST dataset missing - downloading...')
-        import torchvision
-        import torchvision.transforms as transforms
-        trainset = torchvision.datasets.MNIST(root=path_data + 'mnist/temp', train=True,
-                                                download=True, transform=transforms.ToTensor())
-        testset = torchvision.datasets.MNIST(root=path_data + 'mnist/temp', train=False,
-                                               download=True, transform=transforms.ToTensor())
-        train_data=torch.Tensor(60000,28,28)
-        train_label=torch.LongTensor(60000)
-        for idx , example in enumerate(trainset):
-            train_data[idx]=example[0].squeeze()
-            train_label[idx]=example[1]
-        torch.save(train_data,path_data + 'mnist/train_data.pt')
-        torch.save(train_label,path_data + 'mnist/train_label.pt')
-        test_data=torch.Tensor(10000,28,28)
-        test_label=torch.LongTensor(10000)
-        for idx , example in enumerate(testset):
-            test_data[idx]=example[0].squeeze()
-            test_label[idx]=example[1]
-        torch.save(test_data,path_data + 'mnist/test_data.pt')
-        torch.save(test_label,path_data + 'mnist/test_label.pt')
-    return path_data
-
-def check_fashion_mnist_dataset_exists(path_data='../../data/'):
-    flag_train_data = os.path.isfile(path_data + 'fashion-mnist/train_data.pt') 
-    flag_train_label = os.path.isfile(path_data + 'fashion-mnist/train_label.pt') 
-    flag_test_data = os.path.isfile(path_data + 'fashion-mnist/test_data.pt') 
-    flag_test_label = os.path.isfile(path_data + 'fashion-mnist/test_label.pt') 
-    if flag_train_data==False or flag_train_label==False or flag_test_data==False or flag_test_label==False:
-        print('FASHION-MNIST dataset missing - downloading...')
-        import torchvision
-        import torchvision.transforms as transforms
-        trainset = torchvision.datasets.FashionMNIST(root=path_data + 'fashion-mnist/temp', train=True,
-                                                download=True, transform=transforms.ToTensor())
-        testset = torchvision.datasets.FashionMNIST(root=path_data + 'fashion-mnist/temp', train=False,
-                                               download=True, transform=transforms.ToTensor())
-        train_data=torch.Tensor(60000,28,28)
-        train_label=torch.LongTensor(60000)
-        for idx , example in enumerate(trainset):
-            train_data[idx]=example[0].squeeze()
-            train_label[idx]=example[1]
-        torch.save(train_data,path_data + 'fashion-mnist/train_data.pt')
-        torch.save(train_label,path_data + 'fashion-mnist/train_label.pt')
-        test_data=torch.Tensor(10000,28,28)
-        test_label=torch.LongTensor(10000)
-        for idx , example in enumerate(testset):
-            test_data[idx]=example[0].squeeze()
-            test_label[idx]=example[1]
-        torch.save(test_data,path_data + 'fashion-mnist/test_data.pt')
-        torch.save(test_label,path_data + 'fashion-mnist/test_label.pt')
-    return path_data
-
-def check_cifar_dataset_exists(path_data='../../data/'):
-    flag_train_data = os.path.isfile(path_data + 'cifar/train_data.pt') 
-    flag_train_label = os.path.isfile(path_data + 'cifar/train_label.pt') 
-    flag_test_data = os.path.isfile(path_data + 'cifar/test_data.pt') 
-    flag_test_label = os.path.isfile(path_data + 'cifar/test_label.pt') 
-    if flag_train_data==False or flag_train_label==False or flag_test_data==False or flag_test_label==False:
-        print('CIFAR dataset missing - downloading...')
-        import torchvision
-        import torchvision.transforms as transforms
-        trainset = torchvision.datasets.CIFAR10(root=path_data + 'cifar/temp', train=True,
-                                        download=True, transform=transforms.ToTensor())
-        testset = torchvision.datasets.CIFAR10(root=path_data + 'cifar/temp', train=False,
-                                       download=True, transform=transforms.ToTensor())  
-        train_data=torch.Tensor(50000,3,32,32)
-        train_label=torch.LongTensor(50000)
-        for idx , example in enumerate(trainset):
-            train_data[idx]=example[0]
-            train_label[idx]=example[1]
-        torch.save(train_data,path_data + 'cifar/train_data.pt')
-        torch.save(train_label,path_data + 'cifar/train_label.pt') 
-        test_data=torch.Tensor(10000,3,32,32)
-        test_label=torch.LongTensor(10000)
-        for idx , example in enumerate(testset):
-            test_data[idx]=example[0]
-            test_label[idx]=example[1]
-        torch.save(test_data,path_data + 'cifar/test_data.pt')
-        torch.save(test_label,path_data + 'cifar/test_label.pt')
-    return path_data
-
 
